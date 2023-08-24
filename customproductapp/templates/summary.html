@@ -1,0 +1,116 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Customized Product</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        /* Center header 1 */
+        .title-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Center header 2 and paragraph */
+        .results-container {
+            text-align: center;
+        }
+
+        /* Center header 3 and ul */
+        .quantities-container {
+            text-align: center;
+        }
+
+        .icon-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .summary-icon {
+            text-align: center;
+        }
+
+        .icon {
+            width: 50px; /* Adjust the size as needed */
+            height: 50px;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        /* Remove bullets for individual list items */
+        .quantities-list li {
+        list-style: none; 
+        
+        }
+
+        /* Add any additional CSS styles here */
+    </style>
+</head>
+<body>
+    <!-- Center header 1 -->
+    <header class="header">
+        <div class="title-container">
+            <h1 class="title">Your Customized Product</h1>
+        </div>
+    </header>
+    
+    <section class="summary-section">
+        <div class="icon-row">
+            <div class="summary-icon">
+                <img src="{% static 'images/protein.png' %}" alt="Protein Icon" class="icon">
+                <p class="label">Total Protein</p>
+                <p class="value">{{ summary.TotalProtein }} grams</p>
+            </div>
+            <div class="summary-icon">
+                <img src="{% static 'images/fat.png' %}" alt="Fat Icon" class="icon">
+                <p class="label">Total Fat</p>
+                <p class="value">{{ summary.TotalFat }} grams</p>
+            </div>
+            <div class="summary-icon">
+                <img src="{% static 'images/fibre.png' %}" alt="Fiber Icon" class="icon">
+                <p class="label">Total Fiber</p>
+                <p class="value">{{ summary.TotalFibre }} grams</p>
+            </div>
+            <div class="summary-icon">
+                <img src="{% static 'images/salt.png' %}" alt="Salt Icon" class="icon">
+                <p class="label">Total Salt</p>
+                <p class="value">{{ summary.TotalSalt }} grams</p>
+            </div>
+        </div>
+        <div class="summary-total-cost">
+            <p class="total-cost-label">Total Cost:</p>
+            <p class="total-cost-value">${{ summary.TotalCost }}</p>
+        </div>
+    </section>
+
+    <!-- Center header 2 and paragraph -->
+    <section class="optimization-results">
+        <div class="results-container">
+            <h2 class="results-title">Optimization Results</h2>
+            <p class="status">Status: {{ results.status }}</p>
+        </div>
+    </section>
+
+    <!-- Center header 3 and ul -->
+    <section class="optimized-quantities">
+        <div class="quantities-container">
+            <h3 class="quantities-title">Optimized Ingredient Quantities</h3>
+            <ul class="quantities-list">
+                {% for variable, value in results.variables.items %}
+                    <li>{{ variable }}: {{ value }}%</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <!-- Add your footer content here -->
+    </footer>
+</body>
+</html>
+
+
+

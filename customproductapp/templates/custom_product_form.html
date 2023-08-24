@@ -1,0 +1,43 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Customized Product</title>
+    <style>
+        /* Center the content horizontally and vertically */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* This ensures the content is centered vertically */
+            /* Set the background image and adjust other background properties */
+            background-image: url("{% static 'images/background.jpg' %}");
+            background-size: cover; /* Adjust the image size as needed */
+            background-position: center; /* Center the image horizontally */
+            background-repeat: no-repeat; /* Prevent image from repeating */
+        }
+        /* Additional styling for clarity */
+        .content {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Your Customized Product</h1>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" name="clear_output">Clear Output</button>
+        </form>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="Calculate Summary">
+        </form>
+    </div>
+</body>
+</html>
+
+
