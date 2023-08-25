@@ -31,5 +31,6 @@ PuLp
 ## DEMO  VIDEO
 ![Page 1](./static/images/1st_page.png)
 ![Page 2](./static/images/2nd_page.png)
+
 [Link to YouTube Shorts](https://youtube.com/shorts/c9ri8U3E2eQ)
 
