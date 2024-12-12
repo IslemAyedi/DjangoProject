@@ -1,14 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug 23 22:01:20 2023
-
-@author: alann
-"""
-
-from pulp import *
+from gurobipy import Model, GRB
 
 def optimize_whiskas_problem(data):
-    # Extract variables from the JSON data
     Ingredients = data["Ingredients"]
     costs = data["Costs"]
     proteinPercent = data["ProteinPercent"]
@@ -16,47 +8,60 @@ def optimize_whiskas_problem(data):
     fibrePercent = data["FibrePercent"]
     saltPercent = data["SaltPercent"]
 
-    # Create the 'prob' variable to contain the problem data
-    prob = LpProblem("The Whiskas Problem", LpMinimize)
+    model = Model("BlendingOptimization")
 
-    # A dictionary called 'ingredient_vars' is created to contain the referenced Variables
-    ingredient_vars = LpVariable.dicts("Ingr", Ingredients, 0)
+   
+    ingredient_vars = {
+        ingredient: model.addVar(vtype=GRB.CONTINUOUS, name=ingredient, lb=0, ub=100)
+        for ingredient in Ingredients
+    }
 
-    # The objective function is added to 'prob' first
-    prob += (
-        lpSum([costs[i] * ingredient_vars[i] for i in Ingredients]),
-        "Total Cost of Ingredients per can",
+    model.setObjective(
+        sum(costs[ingredient] * ingredient_vars[ingredient] for ingredient in Ingredients),
+        GRB.MINIMIZE
     )
 
-    # Add constraints
-    prob += lpSum([ingredient_vars[i] for i in Ingredients]) == 100, "PercentagesSum"
-    prob += (
-        lpSum([proteinPercent[i] * ingredient_vars[i] for i in Ingredients]) >= 8.0,
-        "ProteinRequirement",
-    )
-    prob += (
-        lpSum([fatPercent[i] * ingredient_vars[i] for i in Ingredients]) >= 6.0,
-        "FatRequirement",
-    )
-    prob += (
-        lpSum([fibrePercent[i] * ingredient_vars[i] for i in Ingredients]) <= 2.0,
-        "FibreRequirement",
-    )
-    prob += (
-        lpSum([saltPercent[i] * ingredient_vars[i] for i in Ingredients]) <= 0.4,
-        "SaltRequirement",
+    model.addConstr(
+        sum(ingredient_vars[ingredient] for ingredient in Ingredients) == 100,
+        "TotalProportions"
     )
 
-    # Solve the optimization problem
-    prob.solve()
+    model.addConstr(
+        sum(proteinPercent[ingredient] * ingredient_vars[ingredient] for ingredient in Ingredients) >= 8.0,  
+        "ProteinRequirement"
+    )
+    model.addConstr(
+        sum(fatPercent[ingredient] * ingredient_vars[ingredient] for ingredient in Ingredients) >= 6.0, 
+        "FatRequirement"
+    )
+    model.addConstr(
+        sum(fibrePercent[ingredient] * ingredient_vars[ingredient] for ingredient in Ingredients) <= 2.0, 
+        "FibreLimit"
+    )
+    model.addConstr(
+        sum(saltPercent[ingredient] * ingredient_vars[ingredient] for ingredient in Ingredients) <= 0.4, 
+        "SaltLimit"
+    )
 
-    # Return the optimization results (variables and objective value)
+    model.setParam("MIPGap", 0.0001) 
+    model.setParam("TimeLimit", 300)  
+
+    model.optimize()
+
+    if model.status != GRB.OPTIMAL:
+        return {
+            "status": "Optimization was not successful",
+            "variables": {},
+            "objective_value": None,
+            "error": f"Model status: {model.status}, message: {model.status}",
+        }
+
     results = {
-        "status": LpStatus[prob.status],
+        "status": "Optimal",
         "variables": {
-            var.name: var.varValue for var in prob.variables() if var.varValue > 0
+            var.varName: round(var.x, 3) for var in model.getVars() if var.x > 0
         },
-        "objective_value": value(prob.objective),
+        "objective_value": round(model.objVal, 3),
     }
 
     return results

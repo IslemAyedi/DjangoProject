@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimization Form</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .form-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .form-container h1 {
+            text-align: center;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+        .ingredient-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #fdfdfd;
+            align-items: center;
+        }
+        .ingredient-group label {
+            font-weight: bold;
+            color: #555;
+        }
+        .ingredient-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .ingredient-group button.remove-ingredient {
+            grid-column: span 2;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .ingredient-group button.remove-ingredient:hover {
+            background-color: #c82333;
+        }
+        .add-ingredient {
+            margin: 20px auto;
+            padding: 12px 25px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+        .add-ingredient:hover {
+            background-color: #218838;
+        }
+        .submit-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 15px 30px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Optimization Form</h1>
+        <form method="POST">
+            {% csrf_token %}
+            <div id="form-fields">
+                <div class="ingredient-group">
+                    <label>Ingredient/Chemical:</label>
+                    <input type="text" name="names[]" class="form-control" placeholder="Name" required>
+                    <label>Cost:</label>
+                    <input type="number" name="costs[]" step="0.01" class="form-control" placeholder="Cost" required>
+                    <label>Protein/Composition %:</label>
+                    <input type="number" name="compositions[]" step="0.01" class="form-control" placeholder="Protein or Composition" required>
+                    <label>Fat/Molar Mass:</label>
+                    <input type="number" name="masses[]" step="0.01" class="form-control" placeholder="Fat or Molar Mass" required>
+                    <label>Fibre/Concentration:</label>
+                    <input type="number" name="concentrations[]" step="0.01" class="form-control" placeholder="Fibre or Concentration" required>
+                    <label>Salt/pH:</label>
+                    <input type="number" name="ph_values[]" step="0.01" class="form-control" placeholder="Salt or pH" required>
+                    <label>Reactivity Level:</label>
+                    <input type="number" name="reactivity_levels[]" step="0.1" class="form-control" placeholder="Reactivity Level" optional>
+                    <button type="button" class="btn btn-danger btn-sm remove-ingredient">Remove</button>
+                </div>
+            </div>
+            <button type="button" class="btn btn-success add-ingredient">Add Another</button>
+            <button type="submit" class="btn btn-primary submit-btn">Submit</button>
+        </form>
+    </div>
+    <script>
+        const formFields = document.getElementById('form-fields');
+        const addIngredientBtn = document.querySelector('.add-ingredient');
+
+        addIngredientBtn.addEventListener('click', function () {
+            const div = document.createElement('div');
+            div.className = 'ingredient-group';
+            div.innerHTML = `
+                <label>Ingredient/Chemical:</label>
+                <input type="text" name="names[]" class="form-control" placeholder="Name" required>
+                <label>Cost:</label>
+                <input type="number" name="costs[]" step="0.01" class="form-control" placeholder="Cost" required>
+                <label>Protein/Composition %:</label>
+                <input type="number" name="compositions[]" step="0.01" class="form-control" placeholder="Protein or Composition" required>
+                <label>Fat/Molar Mass:</label>
+                <input type="number" name="masses[]" step="0.01" class="form-control" placeholder="Fat or Molar Mass" required>
+                <label>Fibre/Concentration:</label>
+                <input type="number" name="concentrations[]" step="0.01" class="form-control" placeholder="Fibre or Concentration" required>
+                <label>Salt/pH:</label>
+                <input type="number" name="ph_values[]" step="0.01" class="form-control" placeholder="Salt or pH" required>
+                <label>Reactivity Level:</label>
+                <input type="number" name="reactivity_levels[]" step="0.1" class="form-control" placeholder="Reactivity Level" optional>
+                <button type="button" class="btn btn-danger btn-sm remove-ingredient">Remove</button>
+            `;
+            formFields.appendChild(div);
+        });
+
+        formFields.addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-ingredient')) {
+                e.target.parentElement.remove();
+            }
+        });
+    </script>
+</body>
+</html>

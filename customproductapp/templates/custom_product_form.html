@@ -1,43 +1,201 @@
-{% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Your Customized Product</title>
+    <title>Custom Food Product Form</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-        /* Center the content horizontally and vertically */
         body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh; /* This ensures the content is centered vertically */
-            /* Set the background image and adjust other background properties */
-            background-image: url("{% static 'images/background.jpg' %}");
-            background-size: cover; /* Adjust the image size as needed */
-            background-position: center; /* Center the image horizontally */
-            background-repeat: no-repeat; /* Prevent image from repeating */
+            min-height: 100vh;
         }
-        /* Additional styling for clarity */
-        .content {
+        .form-container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .form-container h1 {
             text-align: center;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+        .ingredient-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #fdfdfd;
+            align-items: center;
+        }
+        .ingredient-group label {
+            font-weight: bold;
+            color: #555;
+        }
+        .ingredient-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .ingredient-group button.remove-ingredient {
+            grid-column: span 2;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .ingredient-group button.remove-ingredient:hover {
+            background-color: #c82333;
+        }
+        .add-ingredient {
+            margin: 20px auto;
+            padding: 12px 25px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+        .add-ingredient:hover {
+            background-color: #218838;
+        }
+        .submit-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 15px 30px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <div class="content">
-        <h1>Your Customized Product</h1>
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" name="clear_output">Clear Output</button>
-        </form>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <input type="submit" value="Calculate Summary">
-        </form>
-    </div>
+<div class="form-container">
+    <h1>Customize Your Product</h1>
+    <form method="post" id="ingredient-form">
+        {% csrf_token %}
+        <div id="ingredient-list">
+
+            <div class="ingredient-group">
+                <label>Ingredient:</label>
+                <input type="text" name="ingredients[]" value="Chicken" required>
+                <label>Cost (UM):</label>
+                <input type="number" name="costs[]" step="0.01" value="0.013" required>
+                <label>Protein %:</label>
+                <input type="number" name="proteins[]" step="0.01" value="0.1" required>
+                <label>Fat %:</label>
+                <input type="number" name="fats[]" step="0.01" value="0.08" required>
+                <label>Fibre %:</label>
+                <input type="number" name="fibres[]" step="0.01" value="0.001" required>
+                <label>Salt %:</label>
+                <input type="number" name="salts[]" step="0.01" value="0.002" required>
+                <button type="button" class="remove-ingredient">Remove</button>
+            </div>
+
+            <div class="ingredient-group">
+                <label>Ingredient:</label>
+                <input type="text" name="ingredients[]" value="Beef" required>
+                <label>Cost (UM):</label>
+                <input type="number" name="costs[]" step="0.01" value="0.008" required>
+                <label>Protein %:</label>
+                <input type="number" name="proteins[]" step="0.01" value="0.2" required>
+                <label>Fat %:</label>
+                <input type="number" name="fats[]" step="0.01" value="0.1" required>
+                <label>Fibre %:</label>
+                <input type="number" name="fibres[]" step="0.01" value="0.005" required>
+                <label>Salt %:</label>
+                <input type="number" name="salts[]" step="0.01" value="0.005" required>
+                <button type="button" class="remove-ingredient">Remove</button>
+            </div>
+        </div>
+
+        <button type="button" id="add-ingredient" class="add-ingredient">Add Ingredient</button>
+        <button type="submit" class="submit-btn">Optimize</button>
+    </form>
+</div>
+<div id="error-message" class="alert alert-danger" style="display: none;"></div>
+
+<script>
+    const ingredientList = document.getElementById('ingredient-list');
+    const addIngredientBtn = document.getElementById('add-ingredient');
+    const errorMessage = document.getElementById('error-message');
+
+    // Clear error messages
+    function clearError() {
+        errorMessage.style.display = 'none';
+        errorMessage.textContent = '';
+    }
+
+    // Show error messages
+    function showError(message) {
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = message;
+    }
+
+    addIngredientBtn.addEventListener('click', function () {
+        try {
+            clearError();
+            const div = document.createElement('div');
+            div.className = 'ingredient-group';
+            div.innerHTML = `
+                <label>Ingredient:</label>
+                <input type="text" name="ingredients[]" required>
+                <label>Cost (UM):</label>
+                <input type="number" name="costs[]" step="0.001" min="0" required>
+                <label>Protein %:</label>
+                <input type="number" name="proteins[]" step="0.001" min="0" required>
+                <label>Fat %:</label>
+                <input type="number" name="fats[]" step="0.001" min="0" required>
+                <label>Fibre %:</label>
+                <input type="number" name="fibres[]" step="0.001" min="0" required>
+                <label>Salt %:</label>
+                <input type="number" name="salts[]" step="0.001" min="0" required>
+                <button type="button" class="remove-ingredient">Remove</button>
+            `;
+            ingredientList.appendChild(div);
+        } catch (e) {
+            showError("Error adding ingredient: " + e.message);
+        }
+    });
+
+    ingredientList.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-ingredient')) {
+            e.target.parentElement.remove();
+            clearError();
+        }
+    });
+</script>
+
 </body>
 </html>
-
-

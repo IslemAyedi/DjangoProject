@@ -6,6 +6,9 @@ Created on Wed Aug 23 15:28:46 2023
 """
 from django import forms
 
-class IngredientForm(forms.Form):
-    json_data = forms.JSONField()
-
+class CustomProductForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['ingredients'] = forms.CharField(
+            widget=forms.HiddenInput(), required=False
+        )

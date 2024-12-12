@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemical Optimization Results</title>
+</head>
+<body>
+    <h1>Optimization Results</h1>
+    <h2>Summary</h2>
+    <p>Status: {{ results.status }}</p>
+    <p>Objective Value (Cost): {{ results.objective_value }}</p>
+
+    <h2>Optimal Composition</h2>
+    <table border="1">
+        <tr>
+            <th>Chemical</th>
+            <th>Proportion (%)</th>
+        </tr>
+        {% for chemical, proportion in results.variables.items %}
+        <tr>
+            <td>{{ chemical }}</td>
+            <td>{{ proportion }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    
+    <h2>Input Data</h2>
+    <ul>
+        {% for chemical, cost in chemicals.Costs.items %}
+        <li>{{ chemical }}: Cost = {{ cost }}, Composition = {{ chemicals.CompositionPercent|default_if_none:"N/A" }}</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'chemical_form' %}">Go Back</a>
+</body>
+</html>

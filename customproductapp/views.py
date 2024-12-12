@@ -1,61 +1,195 @@
+from django import forms
 from django.shortcuts import render
-from .forms import IngredientForm
-# from .models import Ingredient
+from django.http import JsonResponse
 from .optimization import optimize_whiskas_problem
+from django.conf import settings
+from django.http import HttpResponse
+
+from gurobipy import Model, GRB
+import logging
+
+def main(request):
+    return render(request, 'main.html')
+
+def intermediate_page(request):
+    return render(request, 'intermediate.html')
+
+def chimical_page(request):
+    return render(request, 'custom_chimical_form.html')
+
+def optimize_view(request):
+    return render(request, 'summary.html')
 
 
-# Implement the logic to calculate the summary based on the JSON data
-# You can use the provided data structures and calculate the cost, 
-# protein, fat, etc.
-# Return a dictionary with the summary
-def calculate_summary(data):
-    # Initialize summary variables
-    total_cost = 0
-    total_protein = 0
-    total_fat = 0
-    total_fibre = 0
-    total_salt = 0
+class CustomProductForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        ingredients = kwargs.pop('ingredients', []) 
+        super().__init__(*args, **kwargs)
 
-    # Iterate through ingredients
-    for ingredient in data["Ingredients"]:
-        # Get the cost, protein percent, fat percent, fibre percent, and salt percent for the ingredient
-        cost = data["Costs"].get(ingredient, 0)
-        protein_percent = data["ProteinPercent"].get(ingredient, 0)
-        fat_percent = data["FatPercent"].get(ingredient, 0)
-        fibre_percent = data["FibrePercent"].get(ingredient, 0)
-        salt_percent = data["SaltPercent"].get(ingredient, 0)
-
-        # Calculate the contribution of this ingredient to the totals
-        total_cost += cost
-        total_protein += cost * protein_percent
-        total_fat += cost * fat_percent
-        total_fibre += cost * fibre_percent
-        total_salt += cost * salt_percent
-
-    # Create a summary dictionary
-    summary = {
-        "TotalCost": round(total_cost, 2),
-        "TotalProtein": round(total_protein, 4),
-        "TotalFat": round(total_fat, 4),
-        "TotalFibre": round(total_fibre, 4),
-        "TotalSalt": round(total_salt, 4)
-    }
-
-    return summary
-
+        for ingredient in ingredients:
+            self.fields[f'{ingredient}_cost'] = forms.FloatField(
+                label=f'Cost of {ingredient} ($)',
+                required=True
+            )
+            self.fields[f'{ingredient}_protein'] = forms.FloatField(
+                label=f'Protein % in {ingredient}',
+                required=True
+            )
+            self.fields[f'{ingredient}_fat'] = forms.FloatField(
+                label=f'Fat % in {ingredient}',
+                required=True
+            )
+            self.fields[f'{ingredient}_fibre'] = forms.FloatField(
+                label=f'Fibre % in {ingredient}',
+                required=True
+            )
+            self.fields[f'{ingredient}_salt'] = forms.FloatField(
+                label=f'Salt % in {ingredient}',
+                required=True
+            )
 
 def custom_product_view(request):
     if request.method == 'POST':
-        form = IngredientForm(request.POST)
-        if form.is_valid():
-            json_data = form.cleaned_data['json_data']
-            summary = calculate_summary(json_data)
-            optimization_results = optimize_whiskas_problem(json_data)
-            
-            return render(request, 'summary.html', 
-                          {'summary': summary, 'results': optimization_results})
+        # Parse dynamic ingredient data
+        ingredients = request.POST.getlist('ingredients[]')
+        costs = request.POST.getlist('costs[]')
+        proteins = request.POST.getlist('proteins[]')
+        fats = request.POST.getlist('fats[]')
+        fibres = request.POST.getlist('fibres[]')
+        salts = request.POST.getlist('salts[]')
 
-    else:
-        form = IngredientForm()
+        # Prepare the data dictionary
+        data = {
+            "Ingredients": ingredients,
+            "Costs": {ingredients[i]: float(costs[i]) for i in range(len(ingredients))},
+            "ProteinPercent": {ingredients[i]: float(proteins[i]) for i in range(len(ingredients))},
+            "FatPercent": {ingredients[i]: float(fats[i]) for i in range(len(ingredients))},
+            "FibrePercent": {ingredients[i]: float(fibres[i]) for i in range(len(ingredients))},
+            "SaltPercent": {ingredients[i]: float(salts[i]) for i in range(len(ingredients))},
+        }
 
+        # Call the optimization function
+        results = optimize_whiskas_problem(data)
+
+        # Render the results page with proper context
+        context = {
+            "summary": {
+                "TotalProtein": 8,
+                "TotalFat": 6,
+                "TotalFibre": 2,
+                "TotalSalt": 0.4,
+                "TotalCost": results["objective_value"],
+            },
+            "results": results,
+        }
+        return render(request, 'summary.html', context)
+
+    form = CustomProductForm()
     return render(request, 'custom_product_form.html', {'form': form})
+
+logger = logging.getLogger(__name__)
+
+def custom_product_view(request):
+    if request.method == 'POST':
+        try:
+            # Parse dynamic ingredient data
+            ingredients = request.POST.getlist('ingredients[]')
+            costs = request.POST.getlist('costs[]')
+            proteins = request.POST.getlist('proteins[]')
+            fats = request.POST.getlist('fats[]')
+            fibres = request.POST.getlist('fibres[]')
+            salts = request.POST.getlist('salts[]')
+
+            if not ingredients or not costs or not proteins or not fats or not fibres or not salts:
+                raise ValueError("All fields are required.")
+
+            # Prepare the data dictionary
+            data = {
+                "Ingredients": ingredients,
+                "Costs": {ingredients[i]: float(costs[i]) for i in range(len(ingredients))},
+                "ProteinPercent": {ingredients[i]: float(proteins[i]) for i in range(len(ingredients))},
+                "FatPercent": {ingredients[i]: float(fats[i]) for i in range(len(ingredients))},
+                "FibrePercent": {ingredients[i]: float(fibres[i]) for i in range(len(ingredients))},
+                "SaltPercent": {ingredients[i]: float(salts[i]) for i in range(len(ingredients))},
+            }
+
+            # Call the optimization function
+            results = optimize_whiskas_problem(data)
+
+            # Render the results page with proper context
+            context = {
+                "summary": {
+                    "TotalProtein": 8,  # Replace with actual computation if needed
+                    "TotalFat": 6,  # Replace with actual computation if needed
+                    "TotalFibre": 2,  # Replace with actual computation if needed
+                    "TotalSalt": 0.4,  # Replace with actual computation if needed
+                    "TotalCost": results.get("objective_value", 0),
+                },
+                "results": results,
+            }
+            return render(request, 'summary.html', context)
+
+        except ValueError as ve:
+            logger.error(f"Validation error: {ve}")
+            return render(request, 'custom_product_form.html', {'error': str(ve)})
+
+        except Exception as e:
+            logger.error(f"An unexpected error occurred: {e}")
+            return render(request, 'custom_product_form.html', {'error': 'An unexpected error occurred. Please try again.'})
+
+    form = CustomProductForm()
+    return render(request, 'custom_product_form.html', {'form': form})
+
+
+class ChemicalProductForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        chemicals = kwargs.pop('chemicals', [])
+        super().__init__(*args, **kwargs)
+
+        for chemical in chemicals:
+            self.fields[f'{chemical}_cost'] = forms.FloatField(
+                label=f'Cost of {chemical} ($)',
+                required=True
+            )
+            self.fields[f'{chemical}_composition'] = forms.FloatField(
+                label=f'Composition % in {chemical}',
+                required=True
+            )
+
+def chemical_optimization_view(request):
+    if request.method == 'POST':
+        try:
+            chemicals = request.POST.getlist('chemicals[]')
+            costs = request.POST.getlist('costs[]')
+            compositions = request.POST.getlist('compositions[]')
+
+            if not chemicals or not costs or not compositions:
+                raise ValueError("All fields are required.")
+
+            # Prepare the data dictionary
+            data = {
+                "Ingredients": chemicals,
+                "Costs": {chemicals[i]: float(costs[i]) for i in range(len(chemicals))},
+                "CompositionPercent": {chemicals[i]: float(compositions[i]) for i in range(len(chemicals))},
+            }
+
+            # Call the optimization function
+            results = optimize_whiskas_problem(data)
+
+            # Render the results page with proper context
+            context = {
+                "results": results,
+                "chemicals": data,
+            }
+            return render(request, 'chemical_results.html', context)
+
+        except ValueError as ve:
+            logger.error(f"Validation error: {ve}")
+            return render(request, 'chemical_form.html', {'error': str(ve)})
+
+        except Exception as e:
+            logger.error(f"An unexpected error occurred: {e}")
+            return render(request, 'chemical_form.html', {'error': 'An unexpected error occurred. Please try again.'})
+
+    form = ChemicalProductForm()
+    return render(request, 'chemical_form.html', {'form': form})

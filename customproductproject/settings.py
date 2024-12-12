@@ -56,7 +56,7 @@ ROOT_URLCONF = "customproductproject.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / 'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -126,3 +126,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+INGREDIENTS = [
+    {"name": "Chicken", "cost": 0.013, "protein": 0.1, "fat": 0.08, "fibre": 0.001, "salt": 0.002},
+    {"name": "Beef", "cost": 0.008, "protein": 0.2, "fat": 0.1, "fibre": 0.005, "salt": 0.005},
+]
+
